@@ -2,6 +2,10 @@
 out/
 *.pkg.tar.zst
 *.pkg.tar.xz
+
+# AUR publishing clone (managed by `make publish`)
+.aur/
+.SRCINFO.tmp
 # makepkg work dirs (if building on host)
 src/
 pkg/
