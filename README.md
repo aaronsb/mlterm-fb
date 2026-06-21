@@ -66,14 +66,25 @@ make install                            # newest package in ./out/
 sudo pacman -U out/mlterm-fb-*.pkg.tar.zst
 ```
 
-You must be in two groups — **`video`** (framebuffer access) and **`input`**
-(evdev keyboard/mouse):
+The package installs the binary **setuid root** (`-m 4755 -o root`). This is
+mlterm's own access model for the framebuffer build — upstream's `configure.in`
+forces it for `--with-gui=fb`, and `README.fb` documents no other mechanism: the
+binary opens `/dev/fb0` and the evdev input nodes as root at startup. So there's
+**nothing to configure for access** — just run it on a free VT
+(`Ctrl+Alt+F3`):
 
 ```sh
-sudo gpasswd -a "$USER" video input    # then log out/in for it to take effect
+mlterm-fb
 ```
 
-Run it on a free VT (`Ctrl+Alt+F3`): `mlterm-fb`
+If you'd rather not run a setuid-root terminal, you can diverge from mlterm's
+default and grant access by group instead — strip the bit and add yourself to
+**`video`** (framebuffer) and **`input`** (evdev):
+
+```sh
+sudo chmod u-s /usr/bin/mlterm-fb
+sudo gpasswd -a "$USER" video input    # then log out/in for it to take effect
+```
 
 ## Keyboard on multi-input machines — important
 
