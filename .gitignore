@@ -1,0 +1,12 @@
+# build outputs
+out/
+*.pkg.tar.zst
+*.pkg.tar.xz
+# makepkg work dirs (if building on host)
+src/
+pkg/
+mlterm-*/
+*.tar.gz
+
+# logs
+*.log
