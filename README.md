@@ -19,18 +19,22 @@ desktop already has. Conflicts with the full `mlterm` package.
 ## Build
 
 The build runs entirely inside a throwaway Arch container, so the host never
-sees the compiler toolchain or `-devel` headers:
+sees the compiler toolchain or `-devel` headers. `PKGBUILD` is the single
+source of truth; the `Makefile` drives everything off it:
 
 ```sh
-./build.sh        # docker build → extract package to ./out/
+make build        # docker build → extract package to ./out/
+make install      # sudo pacman -U the freshly built package
 ```
 
-(`PKGBUILD` is the single source of truth — `build.sh` just runs `makepkg`
-inside the container. You can also `makepkg` it directly, or install from AUR.)
+`make help` lists every target. (You can also `makepkg` the `PKGBUILD`
+directly on an Arch host, or install from AUR.)
 
 ## Install
 
 ```sh
+make install                            # newest package in ./out/
+# or, explicitly:
 sudo pacman -U out/mlterm-fb-*.pkg.tar.zst
 ```
 
@@ -91,6 +95,23 @@ use_scrollbar = false
 # ~/.mlterm/aafont
 DEFAULT = JetBrainsMono Nerd Font Mono
 ```
+
+## Maintaining / publishing to AUR
+
+This repo is the single source of truth for the AUR package — the AUR's own git
+repo is a publishing target, not a place to edit. Bump `pkgver`/`pkgrel` (and
+`sha256sums`) in `PKGBUILD`, then:
+
+```sh
+make srcinfo      # regenerate .SRCINFO from PKGBUILD (commit it here)
+make publish      # sync PKGBUILD + .SRCINFO to AUR and push
+```
+
+`make publish` runs `make verify` first (refusing to publish a stale
+`.SRCINFO`), then manages its own gitignored `.aur/` clone of
+`ssh://aur@aur.archlinux.org/mlterm-fb.git`, copies the two files in, commits as
+`mlterm-fb <ver>-<rel>`, and pushes. It is the only target that touches the
+network. Override the remote with `make publish AUR_REMOTE=…` if needed.
 
 ## Notes
 
