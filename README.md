@@ -16,6 +16,34 @@ large dependency tree. This packages **only** the `fb` frontend, so the runtime
 deps are just `freetype2 fontconfig fribidi gpm` — all of which a typical
 desktop already has. Conflicts with the full `mlterm` package.
 
+## Relationship to upstream — a packaging opinion, not a fork
+
+mlterm-fb is deliberately **just a packaging layer**: a curated `--with-gui=fb`
+build plus config ergonomics. It is **not** a source fork, and that's a
+considered choice, not laziness.
+
+- **Upstream is alive and well maintained.** mlterm has been developed for 20+
+  years by a single author (Araki Ken) on a patch-and-tarball workflow; the
+  GitHub repo is a mirror. The issue tracker is well-tended (dozens open, more
+  closed), and fixes land regularly via the maintainer's own commits. There is
+  no backlog crisis for a fork to "rescue."
+- **The fb-relevant delta is small.** Most upstream churn since the last release
+  is in frontends this package drops entirely — Wayland, Cocoa/Quartz, win32,
+  SDL2, Android, Java/SWT, libvte. The shared terminal core moves slowly and
+  the bits that touch fb (e.g. `--crsz/cursor_size`) are few.
+- **A fork would betray the opinion.** The whole point here is to *narrow*
+  mlterm to one frontend. Forking to chase upstream issues would *widen* the
+  maintenance surface to ~200k LOC of C across frontends we don't ship — the
+  opposite of the goal.
+
+So the posture is: **track upstream tarballs, stay narrow, conflict cleanly with
+the full `mlterm`.** If a specific fb-relevant fix or feature is ever worth
+pulling ahead of an upstream release, the right tool is a small quilt-style
+patch in the `PKGBUILD` (the distro-standard approach) — not a fork. A genuine
+soft-fork would only make sense as a deliberate decision to *diverge in
+direction* (e.g. aggressively modernize the fb frontend), which isn't the case
+today.
+
 ## Build
 
 The build runs entirely inside a throwaway Arch container, so the host never
