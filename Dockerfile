@@ -1,5 +1,6 @@
-# Throwaway Arch build environment that runs `makepkg` against ./PKGBUILD and
-# leaves the finished package + .SRCINFO in the build user's workdir.
+# Throwaway Arch build environment that runs `makepkg` against recipe/PKGBUILD
+# (arch-repo's recipe, fetched by `make build`) and leaves the finished package
+# in the build user's workdir.
 #
 # The point: the compiler toolchain and -devel headers live and die in this
 # image. The host only ever sees the final .pkg.tar.zst (extracted by build.sh)
@@ -16,8 +17,7 @@ RUN useradd -m build
 USER build
 WORKDIR /home/build/pkg
 
-COPY --chown=build:build PKGBUILD .
-RUN makepkg --noconfirm --nodeps \
-    && makepkg --printsrcinfo > .SRCINFO
+COPY --chown=build:build recipe/PKGBUILD .
+RUN makepkg --noconfirm --nodeps
 
-# Artifacts: /home/build/pkg/mlterm-fb-*.pkg.tar.zst  and  .SRCINFO
+# Artifacts: /home/build/pkg/mlterm-fb-*.pkg.tar.zst
