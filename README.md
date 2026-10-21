@@ -44,27 +44,45 @@ soft-fork would only make sense as a deliberate decision to *diverge in
 direction* (e.g. aggressively modernize the fb frontend), which isn't the case
 today.
 
-## Build
+## Where the recipe lives
 
-The build runs entirely inside a throwaway Arch container, so the host never
-sees the compiler toolchain or `-devel` headers. `PKGBUILD` is the single
-source of truth; the `Makefile` drives everything off it:
-
-```sh
-make build        # docker build → extract package to ./out/
-make install      # sudo pacman -U the freshly built package
-```
-
-`make help` lists every target. (You can also `makepkg` the `PKGBUILD`
-directly on an Arch host, or install from AUR.)
+The `PKGBUILD` lives in
+[arch-repo](https://github.com/aaronsb/arch-repo/tree/main/PKGBUILDs/mlterm-fb).
+arch-repo watches mlterm releases, builds and signs the package in CI, and
+publishes it to the `[aaronsb]` pacman repo and the AUR. A packaging change is a
+pull request there. This repo holds the documentation and a local build of that
+recipe.
 
 ## Install
 
+From the `[aaronsb]` repo or the AUR:
+
 ```sh
-make install                            # newest package in ./out/
-# or, explicitly:
-sudo pacman -U out/mlterm-fb-*.pkg.tar.zst
+sudo pacman -S mlterm-fb      # with [aaronsb] configured
+yay -S mlterm-fb              # from the AUR
 ```
+
+## Build locally
+
+The build runs inside a throwaway Arch container, so the host never sees the
+compiler toolchain or `-devel` headers. `make build` fetches arch-repo's recipe
+into `recipe/` and builds it:
+
+```sh
+make build        # fetch recipe → docker build → package in ./out/
+make install      # sudo pacman -U the freshly built package
+```
+
+To try an arch-repo change before opening its pull request, build from the
+local file:
+
+```sh
+make build RECIPE=path/to/arch-repo/PKGBUILDs/mlterm-fb/PKGBUILD
+```
+
+`make help` lists every target.
+
+## Access model
 
 The package installs the binary **setuid root** (`-m 4755 -o root`). This is
 mlterm's own access model for the framebuffer build — upstream's `configure.in`
@@ -135,25 +153,13 @@ use_scrollbar = false
 DEFAULT = JetBrainsMono Nerd Font Mono
 ```
 
-## Maintaining / publishing to AUR
-
-This repo is the single source of truth for the AUR package — the AUR's own git
-repo is a publishing target, not a place to edit. Bump `pkgver`/`pkgrel` (and
-`sha256sums`) in `PKGBUILD`, then:
-
-```sh
-make srcinfo      # regenerate .SRCINFO from PKGBUILD (commit it here)
-make publish      # sync PKGBUILD + .SRCINFO to AUR and push
-```
-
-`make publish` runs `make verify` first (refusing to publish a stale
-`.SRCINFO`), then manages its own gitignored `.aur/` clone of
-`ssh://aur@aur.archlinux.org/mlterm-fb.git`, copies the two files in, commits as
-`mlterm-fb <ver>-<rel>`, and pushes. It is the only target that touches the
-network. Override the remote with `make publish AUR_REMOTE=…` if needed.
-
 ## Notes
 
 - Built fb-only via `--with-gui=fb` (no xlib/gtk/wayland frontends).
-- mlterm 3.9.4 predates GCC 14 promoting some legacy-C warnings to errors; the
+- Image support must stay enabled. `--disable-image` compiles out the sixel
+  parser path, and sixel then draws as blank cells. The recipe deletes the
+  `mlimgloader` helper instead, because it links libX11. Sixel is decoded inside
+  the terminal and never uses it; other inline image formats (OSC 1337) do, so
+  those don't display.
+- mlterm predates GCC 14 promoting some legacy-C warnings to errors; the
   PKGBUILD downgrades `-Wincompatible-pointer-types` & friends so it compiles.
